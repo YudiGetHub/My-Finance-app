@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Keuangan Yudi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        .summary { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
+        .box { padding: 20px; border-radius: 12px; color: white; text-align: center; flex: 1; font-weight: bold; transition: transform 0.3s; }
+        .box:hover { transform: translateY(-5px); }
+        .masuk { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .keluar { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .box span { display: block; font-size: 0.9em; margin-bottom: 5px; opacity: 0.9; }
+        .box strong { font-size: 1.5em; }
+        .chart-container { position: relative; height: 400px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Laporan Keuangan Nur Wahyudi</h1>
+
+        <div class="summary">
+            <div class="box masuk">
+                <span>Total Pemasukan</span>
+                <strong id="totalMasuk">0</strong>
+            </div>
+            <div class="box keluar">
+                <span>Total Pengeluaran</span>
+                <strong id="totalKeluar">0</strong>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Mengambil data dari file data.json yang sudah di-push ke GitHub
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                let jmlMasuk = 0;
+                let jmlKeluar = 0;
+
+                data.forEach(item => {
+                    if(item.tipe === "PEMASUKAN") jmlMasuk++;
+                    else jmlKeluar++;
+                });
+
+                document.getElementById('totalMasuk').innerText = jmlMasuk + " Transaksi";
+                document.getElementById('totalKeluar').innerText = jmlKeluar + " Transaksi";
+
+                const ctx = document.getElementById('financeChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pemasukan', 'Pengeluaran'],
+                        datasets: [{
+                            label: 'Jumlah Transaksi',
+                            data: [jmlMasuk, jmlKeluar],
+                            backgroundColor: ['#2ecc71', '#e74c3c'],
+                            borderRadius: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { display: false } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("Data belum tersedia atau gagal dimuat:", err));
+    </script>
+</body>
+</html>
