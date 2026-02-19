@@ -11,54 +11,50 @@ DATA_FILE = 'data.json'
 def push_to_github():
     """Fungsi otomatis mengirim semua perubahan ke GitHub setiap ada update"""
     try:
-        # 1. Menambahkan semua file ke antrean git (termasuk index.html)
+        # 1. Memastikan semua file (termasuk main.py yang bertanda M) masuk ke antrean
         subprocess.run(["git", "add", "."], check=True)
 
-        # 2. Membuat catatan perubahan dengan waktu sekarang
+        # 2. Membuat catatan commit otomatis
+        # Ini akan menghilangkan tanda M di tab Git setelah berhasil ter-push
         subprocess.run(["git", "commit", "-m", f"Auto-update: {datetime.datetime.now()}"], check=True)
 
-        # 3. Memaksa push ke branch main di GitHub
+        # 3. Mengirim paksa ke GitHub
         subprocess.run(["git", "push", "origin", "main"], check=True)
 
-        print(">>> SUKSES: Data dan Dashboard telah diperbarui di GitHub!", flush=True)
+        print(">>> SUKSES: Perubahan otomatis terkirim ke GitHub!", flush=True)
     except Exception as e:
-        print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
-        print("Saran: Pastikan kamu sudah melakukan Push manual sekali di tab Git Replit.", flush=True)
+        # Jika tidak ada perubahan baru (tanda M hilang), Git akan memberikan pesan 'nothing to commit'
+        if "nothing to commit" in str(e).lower():
+            print(">>> INFO: Tidak ada perubahan baru untuk dikirim.", flush=True)
+        else:
+            print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
 
 def load_data():
-    """Memuat data dari file JSON"""
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r') as f:
                 return json.load(f)
-        except: 
-            return []
+        except: return []
     return []
 
 def save_data(data):
-    """Menyimpan data ke file JSON secara permanen"""
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
 @app.route('/')
 def home():
-    return "Server Dashboard Yudi Aktif! Cek link Vercel untuk grafik keuangan."
+    return "Server Dashboard Yudi Aktif!"
 
 @app.route('/kirim-notif', methods=['POST'])
 def terima_notif():
-    # Menggunakan flush=True agar log muncul seketika di Console
-    print("--- PROSES TRANSAKSI BARU DIMULAI ---", flush=True)
-
+    print("--- PROSES TRANSAKSI BARU ---", flush=True)
     data = request.get_json(force=True)
-    pesan = data.get('isi_notif', 'Transaksi Uji Coba')
+    pesan = data.get('isi_notif', 'Tes Transaksi')
 
-    # Logika deteksi otomatis tipe transaksi
     kategori = "PENGELUARAN"
-    kata_kunci_masuk = ["masuk", "terima", "plus", "kredit", "topup", "penerimaan", "berhasil"]
-    if any(x in pesan.lower() for x in kata_kunci_masuk):
+    if any(x in pesan.lower() for x in ["masuk", "terima", "plus", "kredit", "topup", "berhasil"]):
         kategori = "PEMASUKAN"
 
-    # Proses simpan data ke data.json
     catatan = load_data()
     entry = {
         "waktu": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -68,12 +64,11 @@ def terima_notif():
     catatan.append(entry)
     save_data(catatan)
 
-    # Menjalankan fungsi otomatis kirim ke GitHub
+    # Jalankan fungsi otomatisasi
     push_to_github()
 
     print(f"BERHASIL DICATAT: {entry}", flush=True)
-    return jsonify({"status": "success", "github_updated": True}), 200
+    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
-    # Menjalankan server Flask di port 8080
     app.run(host='0.0.0.0', port=8080)
