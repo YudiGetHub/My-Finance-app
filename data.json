@@ -13,5 +13,10 @@
         "waktu": "2026-02-19 01:58:53",
         "tipe": "PENGELUARAN",
         "pesan": "{notif_text}"
+    },
+    {
+        "waktu": "2026-02-19 02:04:16",
+        "tipe": "PENGELUARAN",
+        "pesan": "{notif_text}"
     }
 ]
