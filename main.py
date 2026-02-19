@@ -11,26 +11,22 @@ DATA_FILE = 'data.json'
 def push_to_github():
     """Fungsi otomatis mengirim semua perubahan ke GitHub setiap ada update"""
     try:
-        # MEMAKSA IDENTITAS GIT DARI DALAM KODE
-        # Ini untuk mengatasi error "Author identity unknown" secara permanen
+        # Memastikan identitas git terpasang
         subprocess.run(["git", "config", "user.email", "yudi02012001@gmail.com"], check=True)
         subprocess.run(["git", "config", "user.name", "YudiGetHub"], check=True)
 
-        # 1. Menambahkan semua file ke antrean git
+        # 1. Menambahkan semua file dan mencatat penghapusan file tadi
         subprocess.run(["git", "add", "."], check=True)
 
         # 2. Membuat catatan commit
-        subprocess.run(["git", "commit", "-m", f"Auto-update: {datetime.datetime.now()}"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Cleanup and update: {datetime.datetime.now()}"], check=True)
 
         # 3. Mengirim ke GitHub
         subprocess.run(["git", "push", "origin", "main"], check=True)
 
-        print(">>> SUKSES: Data telah diperbarui di GitHub!", flush=True)
+        print(">>> SUKSES: Data telah diperbarui dan file sampah dihapus!", flush=True)
     except Exception as e:
-        if "nothing to commit" in str(e).lower():
-            print(">>> INFO: Tidak ada perubahan baru.", flush=True)
-        else:
-            print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
+        print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -46,7 +42,7 @@ def save_data(data):
 
 @app.route('/')
 def home():
-    return "Server Dashboard Yudi Aktif!"
+    return "Server Dashboard Yudi Aktif! Cek Vercel sekarang."
 
 @app.route('/kirim-notif', methods=['POST'])
 def terima_notif():
