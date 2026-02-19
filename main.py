@@ -11,21 +11,24 @@ DATA_FILE = 'data.json'
 def push_to_github():
     """Fungsi otomatis mengirim semua perubahan ke GitHub setiap ada update"""
     try:
-        # 1. Memastikan semua file (termasuk main.py yang bertanda M) masuk ke antrean
+        # MEMAKSA IDENTITAS GIT DARI DALAM KODE
+        # Ini untuk mengatasi error "Author identity unknown" secara permanen
+        subprocess.run(["git", "config", "user.email", "yudi02012001@gmail.com"], check=True)
+        subprocess.run(["git", "config", "user.name", "YudiGetHub"], check=True)
+
+        # 1. Menambahkan semua file ke antrean git
         subprocess.run(["git", "add", "."], check=True)
 
-        # 2. Membuat catatan commit otomatis
-        # Ini akan menghilangkan tanda M di tab Git setelah berhasil ter-push
+        # 2. Membuat catatan commit
         subprocess.run(["git", "commit", "-m", f"Auto-update: {datetime.datetime.now()}"], check=True)
 
-        # 3. Mengirim paksa ke GitHub
+        # 3. Mengirim ke GitHub
         subprocess.run(["git", "push", "origin", "main"], check=True)
 
-        print(">>> SUKSES: Perubahan otomatis terkirim ke GitHub!", flush=True)
+        print(">>> SUKSES: Data telah diperbarui di GitHub!", flush=True)
     except Exception as e:
-        # Jika tidak ada perubahan baru (tanda M hilang), Git akan memberikan pesan 'nothing to commit'
         if "nothing to commit" in str(e).lower():
-            print(">>> INFO: Tidak ada perubahan baru untuk dikirim.", flush=True)
+            print(">>> INFO: Tidak ada perubahan baru.", flush=True)
         else:
             print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
 
@@ -64,7 +67,7 @@ def terima_notif():
     catatan.append(entry)
     save_data(catatan)
 
-    # Jalankan fungsi otomatisasi
+    # Jalankan sinkronisasi
     push_to_github()
 
     print(f"BERHASIL DICATAT: {entry}", flush=True)
