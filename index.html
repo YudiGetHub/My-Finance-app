@@ -5,82 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Keuangan Yudi</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-        .summary { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
-        .box { padding: 20px; border-radius: 12px; color: white; text-align: center; flex: 1; font-weight: bold; transition: transform 0.3s; }
-        .box:hover { transform: translateY(-5px); }
-        .masuk { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-        .keluar { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-        .box span { display: block; font-size: 0.9em; margin-bottom: 5px; opacity: 0.9; }
-        .box strong { font-size: 1.5em; }
-        .chart-container { position: relative; height: 400px; width: 100%; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>Laporan Keuangan Nur Wahyudi</h1>
+<body class="bg-gray-100 p-5">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+        <h1 class="text-2xl font-bold text-center text-slate-700 mb-6">Laporan Keuangan Nur Wahyudi</h1>
 
-        <div class="summary">
-            <div class="box masuk">
-                <span>Total Pemasukan</span>
-                <strong id="totalMasuk">0</strong>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-green-500 text-white p-4 rounded-xl text-center shadow">
+                <p class="text-sm">Pemasukan</p>
+                <p id="totalMasuk" class="text-xl font-bold">0</p>
             </div>
-            <div class="box keluar">
-                <span>Total Pengeluaran</span>
-                <strong id="totalKeluar">0</strong>
+            <div class="bg-red-500 text-white p-4 rounded-xl text-center shadow">
+                <p class="text-sm">Pengeluaran</p>
+                <p id="totalKeluar" class="text-xl font-bold">0</p>
             </div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="financeChart"></canvas>
+        <div class="mb-10">
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">Riwayat Transaksi Terakhir</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-200 text-slate-700">
+                            <th class="p-3 rounded-l-lg">Waktu</th>
+                            <th class="p-3">Kategori</th>
+                            <th class="p-3 rounded-r-lg">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelBody" class="divide-y">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        // Mengambil data dari file data.json yang sudah di-push ke GitHub
-        fetch('data.json')
-            .then(response => response.json())
-            .then(data => {
-                let jmlMasuk = 0;
-                let jmlKeluar = 0;
+        async function loadData() {
+            try {
+                // Mengambil data dari data.json yang diupdate Replit
+                const response = await fetch('data.json?t=' + new Date().getTime());
+                const data = await response.json();
 
-                data.forEach(item => {
-                    if(item.tipe === "PEMASUKAN") jmlMasuk++;
-                    else jmlKeluar++;
+                const masuk = data.filter(d => d.tipe === 'PEMASUKAN').length;
+                const keluar = data.filter(d => d.tipe === 'PENGELUARAN').length;
+
+                document.getElementById('totalMasuk').innerText = masuk + " Transaksi";
+                document.getElementById('totalKeluar').innerText = keluar + " Transaksi";
+
+                // Render Tabel (10 transaksi terbaru)
+                const tabelBody = document.getElementById('tabelBody');
+                tabelBody.innerHTML = '';
+                data.reverse().slice(0, 10).forEach(item => {
+                    const colorClass = item.tipe === 'PEMASUKAN' ? 'text-green-600 font-bold' : 'text-red-600 font-bold';
+                    const row = `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-3 text-gray-500">${item.waktu}</td>
+                            <td class="p-3 ${colorClass}">${item.tipe}</td>
+                            <td class="p-3 text-slate-700">${item.pesan}</td>
+                        </tr>
+                    `;
+                    tabelBody.innerHTML += row;
                 });
 
-                document.getElementById('totalMasuk').innerText = jmlMasuk + " Transaksi";
-                document.getElementById('totalKeluar').innerText = jmlKeluar + " Transaksi";
-
-                const ctx = document.getElementById('financeChart').getContext('2d');
+                // Render Grafik
+                const ctx = document.getElementById('myChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: ['Pemasukan', 'Pengeluaran'],
                         datasets: [{
                             label: 'Jumlah Transaksi',
-                            data: [jmlMasuk, jmlKeluar],
-                            backgroundColor: ['#2ecc71', '#e74c3c'],
+                            data: [masuk, keluar],
+                            backgroundColor: ['#22c55e', '#ef4444'],
                             borderRadius: 10
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, grid: { display: false } },
-                            x: { grid: { display: false } }
-                        }
-                    }
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
                 });
-            })
-            .catch(err => console.error("Data belum tersedia atau gagal dimuat:", err));
+            } catch (error) {
+                console.error("Gagal memuat data:", error);
+            }
+        }
+        loadData();
     </script>
 </body>
 </html>
