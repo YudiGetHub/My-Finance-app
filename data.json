@@ -112,5 +112,13 @@
         "tipe": "PEMASUKAN",
         "nominal": 28743,
         "pesan": "{Saldo Awal Masuk}"
+    },
+    {
+        "waktu": "2026-02-19 21:33:50",
+        "tanggal": "2026-02-19",
+        "app": "{Mandiri}",
+        "tipe": "PEMASUKAN",
+        "nominal": 28743,
+        "pesan": "{Saldo Awal Masuk}"
     }
 ]
