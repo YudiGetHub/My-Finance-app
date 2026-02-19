@@ -13,41 +13,39 @@
 <body class="bg-slate-100 p-4">
     <div class="max-w-xl mx-auto">
         <header class="mb-6 text-center">
-            <h1 class="text-2xl font-800 text-slate-900 tracking-tight">Laporan Keuangan Nur Wahyudi</h1>
+            <h1 class="text-2xl font-800 text-slate-900 tracking-tight">Monitoring Saldo Nur Wahyudi</h1>
             <p id="tglSekarang" class="text-xs text-slate-500 font-semibold uppercase mt-1"></p>
         </header>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border-b-4 border-green-500">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Masuk Hari Ini</p>
-                <p id="harianMasuk" class="text-lg font-800 text-green-600">Rp 0</p>
+        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Saldo Aktif Per Akun</h2>
+        <div id="containerSaldo" class="grid grid-cols-1 gap-3 mb-8">
+            <p class="text-center text-slate-400 text-xs italic">Menghitung saldo akun...</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-3xl shadow-sm border-b-4 border-green-500 text-center">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Total Masuk Hari Ini</p>
+                <p id="harianMasuk" class="text-base font-800 text-green-600">Rp 0</p>
             </div>
-            <div class="bg-white p-5 rounded-3xl shadow-sm border-b-4 border-red-500">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keluar Hari Ini</p>
-                <p id="harianKeluar" class="text-lg font-800 text-red-600">Rp 0</p>
+            <div class="bg-white p-4 rounded-3xl shadow-sm border-b-4 border-red-500 text-center">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Total Keluar Hari Ini</p>
+                <p id="harianKeluar" class="text-base font-800 text-red-600">Rp 0</p>
             </div>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-50 flex justify-between items-center">
-                <h2 class="text-sm font-800 text-slate-800 uppercase italic">Riwayat Transaksi</h2>
-                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-bold" id="counterData">0 Data</span>
+            <div class="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-sm font-800 text-slate-800 uppercase italic">Aktivitas Terakhir</h2>
+                <span class="text-[10px] bg-white text-slate-500 px-3 py-1 rounded-full shadow-sm font-bold" id="counterData">0 Data</span>
             </div>
             
             <div id="tabelBody" class="divide-y divide-slate-50">
-                <p class="p-10 text-center text-slate-400 text-sm italic">Memuat data transaksi...</p>
-            </div>
+                </div>
         </div>
-
-        <footer class="mt-8 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-            Update Otomatis via MacroDroid & Replit
-        </footer>
     </div>
 
     <script>
-        // Set Tanggal Hari Ini
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('tglSekarang').innerText = new Date().toLocaleDateString('id-ID', options);
+        const fmt = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
 
         async function loadData() {
             try {
@@ -55,61 +53,76 @@
                 const data = await response.json();
                 const hariIni = new Date().toISOString().split('T')[0];
 
-                let totalMasuk = 0;
-                let totalKeluar = 0;
-                
-                const container = document.getElementById('tabelBody');
-                container.innerHTML = '';
-                document.getElementById('counterData').innerText = data.length + " Transaksi";
+                let totalMasukHarian = 0;
+                let totalKeluarHarian = 0;
+                let saldoPerAkun = {}; // Objek untuk menampung akumulasi saldo
 
-                // Urutkan dari yang terbaru (reverse)
-                data.reverse().forEach(item => {
-                    // Logika Hitung Nominal Harian
-                    if(item.tanggal === hariIni) {
-                        if(item.tipe === 'PEMASUKAN') totalMasuk += (item.nominal || 0);
-                        else totalKeluar += (item.nominal || 0);
+                const containerRiwayat = document.getElementById('tabelBody');
+                const containerSaldo = document.getElementById('containerSaldo');
+                containerRiwayat.innerHTML = '';
+                containerSaldo.innerHTML = '';
+
+                // Proses Data (Urutan asli untuk hitung saldo, nanti di-reverse untuk tampilan)
+                data.forEach(item => {
+                    const app = item.app || 'Sistem';
+                    const nominal = item.nominal || 0;
+
+                    // Jika akun belum ada di list, buat baru dengan saldo 0
+                    if (!saldoPerAkun[app]) saldoPerAkun[app] = 0;
+
+                    // Akumulasi Saldo Per Akun
+                    if (item.tipe === 'PEMASUKAN') {
+                        saldoPerAkun[app] += nominal;
+                        if(item.tanggal === hariIni) totalMasukHarian += nominal;
+                    } else {
+                        saldoPerAkun[app] -= nominal;
+                        if(item.tanggal === hariIni) totalKeluarHarian += nominal;
                     }
-
-                    // Format Rupiah
-                    const formatRupiah = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0
-                    }).format(item.nominal || 0);
-
-                    // Tentukan Warna & Simbol
-                    const colorClass = item.tipe === 'PEMASUKAN' ? 'text-green-600' : 'text-red-600';
-                    const simbol = item.tipe === 'PEMASUKAN' ? '+' : '-';
-
-                    // Template Baris (Modern List Style)
-                    const card = `
-                        <div class="p-5 hover:bg-slate-50 transition-all">
-                            <div class="flex justify-between items-start mb-1">
-                                <div>
-                                    <span class="block text-xs font-800 text-slate-900 uppercase tracking-tight">${item.app || 'Aplikasi'}</span>
-                                    <span class="text-[10px] text-slate-400 font-mono italic">${item.waktu}</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="block font-800 ${colorClass} text-sm">${simbol} ${formatRupiah}</span>
-                                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 uppercase">${item.tipe}</span>
-                                </div>
-                            </div>
-                            <p class="text-[11px] text-slate-500 leading-relaxed mt-2 p-2 bg-slate-50 rounded-lg border-l-2 border-slate-200 italic">"${item.pesan}"</p>
-                        </div>
-                    `;
-                    container.innerHTML += card;
                 });
 
-                // Update Header Angka
-                document.getElementById('harianMasuk').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalMasuk);
-                document.getElementById('harianKeluar').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalKeluar);
+                // Render Kartu Saldo Per Akun
+                Object.keys(saldoPerAkun).forEach(akun => {
+                    const saldo = saldoPerAkun[akun];
+                    const card = `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border-l-8 ${saldo >= 0 ? 'border-blue-500' : 'border-orange-500'}">
+                            <span class="font-800 text-slate-700 text-sm uppercase">${akun}</span>
+                            <span class="font-900 ${saldo >= 0 ? 'text-blue-600' : 'text-orange-600'} text-base">${fmt.format(saldo)}</span>
+                        </div>
+                    `;
+                    containerSaldo.innerHTML += card;
+                });
 
-            } catch (error) {
-                console.error("Gagal memuat data:", error);
-                document.getElementById('tabelBody').innerHTML = '<p class="p-10 text-center text-red-400 text-sm">Gagal mengambil data. Pastikan data.json sudah ada.</p>';
+                // Render List Riwayat (Dibalik agar terbaru di atas)
+                [...data].reverse().forEach(item => {
+                    const color = item.tipe === 'PEMASUKAN' ? 'text-green-600' : 'text-red-600';
+                    const simbol = item.tipe === 'PEMASUKAN' ? '+' : '-';
+                    
+                    const row = `
+                        <div class="p-5 hover:bg-slate-50 transition-all">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="block text-[11px] font-800 text-slate-900 uppercase">${item.app}</span>
+                                    <span class="text-[9px] text-slate-400 font-mono">${item.waktu}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block font-800 ${color} text-sm">${simbol} ${fmt.format(item.nominal)}</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-2 p-2 bg-slate-50 rounded-lg italic">"${item.pesan}"</p>
+                        </div>
+                    `;
+                    containerRiwayat.innerHTML += row;
+                });
+
+                document.getElementById('harianMasuk').innerText = fmt.format(totalMasukHarian);
+                document.getElementById('harianKeluar').innerText = fmt.format(totalKeluarHarian);
+                document.getElementById('counterData').innerText = data.length + " Transaksi";
+                document.getElementById('tglSekarang').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            } catch (e) {
+                console.error(e);
             }
         }
-
         loadData();
     </script>
 </body>
