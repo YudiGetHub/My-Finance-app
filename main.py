@@ -8,14 +8,19 @@ app = Flask(__name__)
 DATA_FILE = 'data.json'
 
 def push_to_github():
+    """Fungsi otomatis mengirim data.json ke GitHub setiap ada update"""
     try:
-        # Menambah file, commit, dan push via command line
-        subprocess.run(["git", "add", DATA_FILE])
-        subprocess.run(["git", "commit", "-m", "Update data keuangan otomatis"])
-        subprocess.run(["git", "push"])
-        print("--- BERHASIL PUSH KE GITHUB ---")
+        # Menambahkan file data.json ke antrean git
+        subprocess.run(["git", "add", DATA_FILE], check=True)
+        # Membuat catatan perubahan
+        subprocess.run(["git", "commit", "-m", f"Update data: {datetime.datetime.now()}"], check=True)
+        # Mengirim ke GitHub
+        subprocess.run(["git", "push"], check=True)
+        print(">>> DATA BERHASIL TERKIRIM KE GITHUB!")
+    except subprocess.CalledProcessError as e:
+        print(f">>> GAGAL PUSH: Mungkin perlu Push manual pertama kali via tombol Replit. Error: {e}")
     except Exception as e:
-        print(f"Gagal Push: {e}")
+        print(f">>> ERROR LAIN: {e}")
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -31,16 +36,17 @@ def save_data(data):
 
 @app.route('/')
 def home():
-    return "Server Keuangan Yudi Aktif & Terhubung GitHub!"
+    return "Server Yudi Aktif. Cek tab Code di GitHub untuk melihat data!"
 
 @app.route('/kirim-notif', methods=['POST'])
 def terima_notif():
-    print("--- ADA NOTIFIKASI BARU ---")
+    print("--- ADA TRANSAKSI MASUK ---")
     data = request.get_json(force=True)
-    pesan = data.get('isi_notif', 'Tes Notif')
+    pesan = data.get('isi_notif', 'Tes Transaksi')
 
+    # Deteksi otomatis uang masuk/keluar
     kategori = "PENGELUARAN"
-    if any(x in pesan.lower() for x in ["masuk", "terima", "plus", "kredit"]):
+    if any(x in pesan.lower() for x in ["masuk", "terima", "plus", "kredit", "topup"]):
         kategori = "PEMASUKAN"
 
     catatan = load_data()
@@ -52,11 +58,12 @@ def terima_notif():
     catatan.append(entry)
     save_data(catatan)
 
-    # TRIGGER AUTO PUSH
+    # Jalankan proses kirim ke GitHub
     push_to_github()
 
-    print(f"TERCATAT: {entry}")
-    return jsonify({"status": "success"}), 200
+    print(f"TERCATAT DI REPLIT & GITHUB: {entry}")
+    return jsonify({"status": "success", "pushed": True}), 200
 
 if __name__ == '__main__':
+    # Server berjalan di port 8080
     app.run(host='0.0.0.0', port=8080)
