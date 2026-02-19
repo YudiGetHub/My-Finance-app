@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import subprocess
+import sys
 
 app = Flask(__name__)
 DATA_FILE = 'data.json'
@@ -10,17 +11,19 @@ DATA_FILE = 'data.json'
 def push_to_github():
     """Fungsi otomatis mengirim semua perubahan ke GitHub setiap ada update"""
     try:
-        # Menambahkan semua file (termasuk index.html dan data.json) ke antrean git
+        # 1. Menambahkan semua file ke antrean git (termasuk index.html)
         subprocess.run(["git", "add", "."], check=True)
-        # Membuat catatan perubahan dengan timestamp terbaru
-        subprocess.run(["git", "commit", "-m", f"Update data & dashboard: {datetime.datetime.now()}"], check=True)
-        # Mengirim ke GitHub - Ditambahkan 'origin main' agar lebih spesifik
+
+        # 2. Membuat catatan perubahan dengan waktu sekarang
+        subprocess.run(["git", "commit", "-m", f"Auto-update: {datetime.datetime.now()}"], check=True)
+
+        # 3. Memaksa push ke branch main di GitHub
         subprocess.run(["git", "push", "origin", "main"], check=True)
-        print(">>> SUKSES: Data dan Dashboard telah diperbarui di GitHub!")
-    except subprocess.CalledProcessError as e:
-        print(f">>> GAGAL PUSH: Pastikan kamu sudah push manual sekali lewat tombol Replit. Error: {e}")
+
+        print(">>> SUKSES: Data dan Dashboard telah diperbarui di GitHub!", flush=True)
     except Exception as e:
-        print(f">>> ERROR SISTEM: {e}")
+        print(f">>> GAGAL AUTOPUSH: {e}", flush=True)
+        print("Saran: Pastikan kamu sudah melakukan Push manual sekali di tab Git Replit.", flush=True)
 
 def load_data():
     """Memuat data dari file JSON"""
@@ -39,12 +42,13 @@ def save_data(data):
 
 @app.route('/')
 def home():
-    # Mengarahkan pesan utama ke Dashboard
-    return "Server Dashboard Yudi Aktif! Cek link Vercel kamu untuk melihat grafik."
+    return "Server Dashboard Yudi Aktif! Cek link Vercel untuk grafik keuangan."
 
 @app.route('/kirim-notif', methods=['POST'])
 def terima_notif():
-    print("--- MENERIMA TRANSAKSI BARU ---")
+    # Menggunakan flush=True agar log muncul seketika di Console
+    print("--- PROSES TRANSAKSI BARU DIMULAI ---", flush=True)
+
     data = request.get_json(force=True)
     pesan = data.get('isi_notif', 'Transaksi Uji Coba')
 
@@ -54,7 +58,7 @@ def terima_notif():
     if any(x in pesan.lower() for x in kata_kunci_masuk):
         kategori = "PEMASUKAN"
 
-    # Proses simpan data
+    # Proses simpan data ke data.json
     catatan = load_data()
     entry = {
         "waktu": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -64,10 +68,10 @@ def terima_notif():
     catatan.append(entry)
     save_data(catatan)
 
-    # Jalankan proses sinkronisasi ke GitHub secara otomatis
+    # Menjalankan fungsi otomatis kirim ke GitHub
     push_to_github()
 
-    print(f"BERHASIL DICATAT: {entry}")
+    print(f"BERHASIL DICATAT: {entry}", flush=True)
     return jsonify({"status": "success", "github_updated": True}), 200
 
 if __name__ == '__main__':
