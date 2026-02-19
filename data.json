@@ -68,5 +68,15 @@
         "waktu": "2026-02-19 14:45:37",
         "tipe": "PENGELUARAN",
         "pesan": "{notif_text}"
+    },
+    {
+        "waktu": "2026-02-19 14:48:31",
+        "tipe": "PENGELUARAN",
+        "pesan": "{notif_text}"
+    },
+    {
+        "waktu": "2026-02-19 14:50:27",
+        "tipe": "PENGELUARAN",
+        "pesan": "{notif_text}"
     }
 ]
