@@ -104,5 +104,13 @@
         "tipe": "PENGELUARAN",
         "nominal": 0,
         "pesan": "{notif_text}"
+    },
+    {
+        "waktu": "2026-02-19 15:26:07",
+        "tanggal": "2026-02-19",
+        "app": "{Mandiri}",
+        "tipe": "PEMASUKAN",
+        "nominal": 28743,
+        "pesan": "{Saldo Awal Masuk}"
     }
 ]
