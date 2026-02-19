@@ -88,5 +88,13 @@
         "waktu": "2026-02-19 15:00:58",
         "tipe": "PENGELUARAN",
         "pesan": "{notif_text}"
+    },
+    {
+        "waktu": "2026-02-19 15:14:12",
+        "tanggal": "2026-02-19",
+        "app": "{notif_app_name}",
+        "tipe": "PENGELUARAN",
+        "nominal": 0,
+        "pesan": "{notif_text}"
     }
 ]
